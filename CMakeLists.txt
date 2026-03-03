@@ -50,13 +50,23 @@ if(WIN32)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(3dgungame PRIVATE pthread dl m)
 
-    find_package(OpenGL REQUIRED)
-    target_link_libraries(3dgungame PRIVATE OpenGL::GL)
+    # Raylib's CMake config normally exports OpenGL/X11 transitively, so on
+    # many systems nothing below is needed.  We add fallbacks for devices like
+    # the Steam Deck where GL include dirs are absent but libGL is still present.
+    find_package(OpenGL QUIET)
+    if(OpenGL_FOUND)
+        target_link_libraries(3dgungame PRIVATE OpenGL::GL)
+    else()
+        target_link_libraries(3dgungame PRIVATE GL)
+    endif()
 
     find_package(X11 QUIET)
     if(X11_FOUND)
-        target_link_libraries(3dgungame PRIVATE
-            X11 ${X11_Xrandr_LIB} ${X11_Xi_LIB}
-            ${X11_Xcursor_LIB} ${X11_Xinerama_LIB})
+        target_link_libraries(3dgungame PRIVATE X11)
+        foreach(_xlib Xrandr Xi Xcursor Xinerama)
+            if(X11_${_xlib}_LIB)
+                target_link_libraries(3dgungame PRIVATE ${X11_${_xlib}_LIB})
+            endif()
+        endforeach()
     endif()
 endif()
