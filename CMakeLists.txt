@@ -50,6 +50,10 @@ if(WIN32)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(3dgungame PRIVATE pthread dl m)
 
+    # SteamOS / Steam Deck: GCC is sometimes configured with a non-standard
+    # sysroot that skips /usr/include.  Force it back into the search path.
+    target_compile_options(3dgungame PRIVATE -isystem /usr/include)
+
     # Raylib's CMake config normally exports OpenGL/X11 transitively, so on
     # many systems nothing below is needed.  We add fallbacks for devices like
     # the Steam Deck where GL include dirs are absent but libGL is still present.
