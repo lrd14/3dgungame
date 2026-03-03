@@ -38,7 +38,7 @@ sudo pacman -S base-devel cmake raylib enet
 
 ```bash
 git clone <your-repo-url>
-cd 3dgungame
+cd 3dgungame/3dgungame
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
