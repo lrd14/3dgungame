@@ -46,8 +46,8 @@ private:
     void onDisconnect(ENetPeer* peer);
     void onPacket(ENetPeer* peer, ENetPacket* pkt);
 
-    void handlePlayerInput(const PlayerInputPacket& p);
-    void handleShoot(const ShootPacket& s);
+    void handlePlayerInput(ENetPeer* peer, const PlayerInputPacket& p);
+    void handleShoot(ENetPeer* peer, const ShootPacket& s);
 
     void broadcastSnapshot();
 

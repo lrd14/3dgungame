@@ -280,32 +280,36 @@ void Server::onPacket(ENetPeer* peer, ENetPacket* pkt) {
         if (pkt->dataLength >= sizeof(PlayerInputPacket)) {
             PlayerInputPacket p;
             memcpy(&p, pkt->data, sizeof(p));
-            handlePlayerInput(p);
+            handlePlayerInput(peer, p);
         }
         break;
     case PacketType::SHOOT:
         if (pkt->dataLength >= sizeof(ShootPacket)) {
             ShootPacket s;
             memcpy(&s, pkt->data, sizeof(s));
-            handleShoot(s);
+            handleShoot(peer, s);
         }
         break;
     default: break;
     }
 }
 
-void Server::handlePlayerInput(const PlayerInputPacket& p) {
-    if (p.id >= MAX_PLAYERS || !m_players[p.id].active) return;
+void Server::handlePlayerInput(ENetPeer* peer, const PlayerInputPacket& p) {
+    uint8_t peerId = idFromPeer(peer);
+    if (peerId == 255 || !m_players[peerId].active) return;
+    if (p.id != peerId) return;
 
     // Accept the client's reported position (simple authoritative model for now).
     // A more robust server would validate against max speed instead.
-    m_players[p.id].position = { p.x, p.y, p.z };
-    m_players[p.id].yaw      = p.yaw;
-    m_players[p.id].pitch    = p.pitch;
+    m_players[peerId].position = { p.x, p.y, p.z };
+    m_players[peerId].yaw      = p.yaw;
+    m_players[peerId].pitch    = p.pitch;
 }
 
-void Server::handleShoot(const ShootPacket& s) {
-    if (s.shooterId >= MAX_PLAYERS || !m_players[s.shooterId].active) return;
+void Server::handleShoot(ENetPeer* peer, const ShootPacket& s) {
+    uint8_t shooterId = idFromPeer(peer);
+    if (shooterId == 255 || !m_players[shooterId].active) return;
+    if (s.shooterId != shooterId) return;
 
     Ray ray = {
         { s.ox, s.oy, s.oz },
@@ -316,7 +320,7 @@ void Server::handleShoot(const ShootPacket& s) {
     float   bestDist = GUN_RANGE;
 
     for (uint8_t i = 0; i < MAX_PLAYERS; i++) {
-        if (i == s.shooterId || !m_players[i].active || !m_players[i].alive) continue;
+        if (i == shooterId || !m_players[i].active || !m_players[i].alive) continue;
 
         Vector3 pos = m_players[i].position;
         BoundingBox box = {
@@ -334,7 +338,7 @@ void Server::handleShoot(const ShootPacket& s) {
     // Compute where the bullet ends (hit point or max-range)
     float endDist = (hitId != 255) ? bestDist : GUN_RANGE;
     ShootEffectPacket fx;
-    fx.shooterId = s.shooterId;
+    fx.shooterId = shooterId;
     fx.startX = s.ox; fx.startY = s.oy; fx.startZ = s.oz;
     fx.endX   = s.ox + s.dx * endDist;
     fx.endY   = s.oy + s.dy * endDist;
@@ -348,17 +352,17 @@ void Server::handleShoot(const ShootPacket& s) {
 
     HitEventPacket hit;
     hit.targetId  = hitId;
-    hit.shooterId = s.shooterId;
+    hit.shooterId = shooterId;
     hit.newHealth = static_cast<int16_t>(m_players[hitId].health);
     broadcastReliable(&hit, sizeof(hit));
 
     printf("[Server] Player %d hit player %d for %d  (HP: %d)\n",
-           s.shooterId, hitId, dmg, m_players[hitId].health);
+           shooterId, hitId, dmg, m_players[hitId].health);
 
     if (!m_players[hitId].alive) {
         m_respawnTimers[hitId] = 5.0f;   // 5-second respawn delay
         printf("[Server] Player %d was eliminated by player %d (respawn in 5s)\n",
-               hitId, s.shooterId);
+               hitId, shooterId);
     }
 }
 
