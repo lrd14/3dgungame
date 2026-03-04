@@ -110,9 +110,6 @@ private:
     bool  m_running        = false;
     bool  m_posInitialized = false;
 
-    // Used to detect the frame a jump or landing happens
-    bool  m_wasOnGround    = false;
-
     // --- Viewmodel animation state ---
     float m_recoilZ        = 0.0f;
     float m_recoilZVel     = 0.0f;
