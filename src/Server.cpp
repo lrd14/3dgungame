@@ -331,6 +331,16 @@ void Server::handleShoot(const ShootPacket& s) {
         }
     }
 
+    // Compute where the bullet ends (hit point or max-range)
+    float endDist = (hitId != 255) ? bestDist : GUN_RANGE;
+    ShootEffectPacket fx;
+    fx.shooterId = s.shooterId;
+    fx.startX = s.ox; fx.startY = s.oy; fx.startZ = s.oz;
+    fx.endX   = s.ox + s.dx * endDist;
+    fx.endY   = s.oy + s.dy * endDist;
+    fx.endZ   = s.oz + s.dz * endDist;
+    broadcastUnreliable(&fx, sizeof(fx));   // visual only — ok to drop
+
     if (hitId == 255) return;
 
     int dmg = static_cast<int>(GUN_DAMAGE);
@@ -369,6 +379,7 @@ void Server::broadcastSnapshot() {
         s.pitch  = m_players[i].pitch;
         s.health = static_cast<int16_t>(m_players[i].health);
         s.alive  = m_players[i].alive ? 1 : 0;
+        s.ping   = m_peers[i] ? static_cast<uint16_t>(m_peers[i]->roundTripTime) : 0;
     }
 
     broadcastUnreliable(&snap, sizeof(snap));

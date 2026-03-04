@@ -29,6 +29,7 @@ enum class PacketType : uint8_t {
     WORLD_SNAPSHOT,    // server -> all clients: everyone's state
     SHOOT,             // client -> server: I fired
     HIT_EVENT,         // server -> all clients: someone was hit
+    SHOOT_EFFECT,      // server -> all clients: visual tracer for any shot
 };
 
 // Keep structs tightly packed so sizeof() matches what we send over the wire.
@@ -48,11 +49,12 @@ struct PlayerInputPacket {
 
 // Per-player data inside a world snapshot
 struct PlayerSnapshot {
-    uint8_t id;
-    float   x, y, z;
-    float   yaw, pitch;
-    int16_t health;
-    uint8_t alive;   // 1 = alive, 0 = dead
+    uint8_t  id;
+    float    x, y, z;
+    float    yaw, pitch;
+    int16_t  health;
+    uint8_t  alive;   // 1 = alive, 0 = dead
+    uint16_t ping;    // round-trip time in ms (from ENet, server-measured)
 };
 
 struct WorldSnapshotPacket {
@@ -73,6 +75,14 @@ struct HitEventPacket {
     uint8_t    targetId  = 0;
     uint8_t    shooterId = 0;
     int16_t    newHealth = 0;
+};
+
+// Sent for every shot (hit or miss) so clients can draw bullet tracers
+struct ShootEffectPacket {
+    PacketType type      = PacketType::SHOOT_EFFECT;
+    uint8_t    shooterId = 0;
+    float      startX, startY, startZ;   // muzzle position
+    float      endX,   endY,   endZ;     // impact point or max-range endpoint
 };
 
 #pragma pack(pop)

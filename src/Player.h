@@ -7,10 +7,11 @@ class Map;
 
 class Player {
 public:
-    uint8_t id     = 0;
-    bool    active = false;
-    bool    alive  = true;
-    int     health = MAX_HEALTH;
+    uint8_t  id     = 0;
+    bool     active = false;
+    bool     alive  = true;
+    int      health = MAX_HEALTH;
+    uint16_t ping   = 0;   // ms, updated from world snapshots
 
     Vector3 position = { 0, PLAYER_HEIGHT * 0.5f, 0 };
     float   yaw      = 0.0f;   // horizontal look angle in degrees
@@ -24,8 +25,10 @@ public:
     // World-space direction the player is looking
     Vector3 lookDir() const;
 
-    // Set horizontal velocity from directional input (call each frame before update)
-    void moveInput(bool forward, bool back, bool left, bool right, bool jump);
+    // Apply Source-style friction + acceleration from directional input.
+    // Must be called with the current frame's dt before update().
+    void moveInput(bool forward, bool back, bool left, bool right, bool jump,
+                   float dt);
 
     // Advance physics one timestep and resolve collisions against the map
     void update(float dt, const Map& map);
