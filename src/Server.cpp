@@ -319,6 +319,14 @@ void Server::handleShoot(ENetPeer* peer, const ShootPacket& s) {
     uint8_t hitId    = 255;
     float   bestDist = GUN_RANGE;
 
+    // Map geometry can block bullets before they reach a player.
+    for (const auto& box : m_map.collisionBoxes()) {
+        RayCollision col = GetRayCollisionBox(ray, box);
+        if (col.hit && col.distance < bestDist) {
+            bestDist = col.distance;
+        }
+    }
+
     for (uint8_t i = 0; i < MAX_PLAYERS; i++) {
         if (i == shooterId || !m_players[i].active || !m_players[i].alive) continue;
 
@@ -335,8 +343,8 @@ void Server::handleShoot(ENetPeer* peer, const ShootPacket& s) {
         }
     }
 
-    // Compute where the bullet ends (hit point or max-range)
-    float endDist = (hitId != 255) ? bestDist : GUN_RANGE;
+    // Compute where the bullet ends (wall/player hit point or max-range)
+    float endDist = bestDist;
     ShootEffectPacket fx;
     fx.shooterId = shooterId;
     fx.startX = s.ox; fx.startY = s.oy; fx.startZ = s.oz;
