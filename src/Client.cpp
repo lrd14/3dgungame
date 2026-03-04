@@ -254,11 +254,13 @@ void Client::runMenu() {
         // --- Connect on Enter or button click ---
         bool tryConnect = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER);
 
-        // Button click detection (rough rect, matches renderMenu below)
+        // Button click detection (kept in sync with renderMenu below)
         const int W  = GetScreenWidth();
         const int H  = GetScreenHeight();
         const int BW = 220, BH = 50;
-        const int BX = (W - BW) / 2, BY = H / 2 + 50;
+        const int cardH = 230;
+        const int cardY = H / 2 - 50;
+        const int BX = (W - BW) / 2, BY = cardY + cardH - 70;
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mp = GetMousePosition();
             if (mp.x >= BX && mp.x <= BX + BW && mp.y >= BY && mp.y <= BY + BH)
